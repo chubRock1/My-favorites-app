@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Login from './pages/Login';
 import Home from './pages/Home';
 import Category from './pages/Category';
+import Favorites from './pages/Favorites';
 import SharedList from './pages/SharedList';
 
 function ProtectedRoute({ children }) {
@@ -21,6 +22,7 @@ function AppRoutes() {
       <Route path="/login" element={<PublicOnlyRoute><Login /></PublicOnlyRoute>} />
       <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
       <Route path="/category/:id" element={<ProtectedRoute><Category /></ProtectedRoute>} />
+      <Route path="/favorites" element={<ProtectedRoute><Favorites /></ProtectedRoute>} />
       <Route path="/shared/:shareId/:categoryId" element={<SharedList />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

@@ -30,11 +30,12 @@ export function useItems(userId, categoryId) {
     return unsub;
   }, [userId, categoryId]);
 
-  const addItem = (name, notes = '', photoUrl = null) => {
-    const rank = items.length + 1;
+  const addItem = (name, notes = '', photoUrl = null, disliked = false) => {
+    const likedCount = items.filter((i) => !i.disliked).length;
+    const rank = disliked ? 0 : likedCount + 1;
     return addDoc(
       collection(db, 'users', userId, 'categories', categoryId, 'items'),
-      { name, notes, photoUrl, rank, createdAt: serverTimestamp() }
+      { name, notes, photoUrl, disliked, rank, createdAt: serverTimestamp() }
     );
   };
 

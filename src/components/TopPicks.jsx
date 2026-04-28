@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { collection, getDocs, limit, orderBy, query } from 'firebase/firestore';
+import { collection, getDocs, limit, orderBy, query, where } from 'firebase/firestore';
 import { db } from '../firebase';
 
 const GRADIENTS = [
@@ -23,6 +23,8 @@ export default function TopPicks({ userId, categories }) {
         categories.map(async (cat) => {
           const q = query(
             collection(db, 'users', userId, 'categories', cat.id, 'items'),
+            where('disliked', '!=', true),
+            orderBy('disliked'),
             orderBy('rank', 'asc'),
             limit(1)
           );

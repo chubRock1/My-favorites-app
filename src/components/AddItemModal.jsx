@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
-import { Camera, X } from 'lucide-react';
+import { Camera, ThumbsDown, ThumbsUp, X } from 'lucide-react';
 
 const compressImage = (file) =>
   new Promise((resolve) => {
@@ -27,7 +27,8 @@ const compressImage = (file) =>
 export default function AddItemModal({ open, onClose, onSave, existing }) {
   const [name, setName] = useState('');
   const [notes, setNotes] = useState('');
-  const [photo, setPhoto] = useState(null); // base64 string or null
+  const [photo, setPhoto] = useState(null);
+  const [disliked, setDisliked] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef();
 
@@ -36,10 +37,12 @@ export default function AddItemModal({ open, onClose, onSave, existing }) {
       setName(existing.name);
       setNotes(existing.notes || '');
       setPhoto(existing.photoUrl || null);
+      setDisliked(existing.disliked || false);
     } else {
       setName('');
       setNotes('');
       setPhoto(null);
+      setDisliked(false);
     }
   }, [existing, open]);
 
@@ -56,7 +59,7 @@ export default function AddItemModal({ open, onClose, onSave, existing }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!name.trim()) return;
-    await onSave(name.trim(), notes.trim(), photo);
+    await onSave(name.trim(), notes.trim(), photo, disliked);
     onClose();
   };
 
@@ -82,6 +85,24 @@ export default function AddItemModal({ open, onClose, onSave, existing }) {
                 <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
               </div>
               <form onSubmit={handleSubmit} className="space-y-4">
+
+                {/* Liked / Disliked toggle */}
+                <div className="flex rounded-xl overflow-hidden border border-gray-200">
+                  <button
+                    type="button"
+                    onClick={() => setDisliked(false)}
+                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold transition ${!disliked ? 'bg-brand-600 text-white' : 'text-gray-400 hover:bg-gray-50'}`}
+                  >
+                    <ThumbsUp className="w-4 h-4" /> Liked it
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDisliked(true)}
+                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold transition ${disliked ? 'bg-red-500 text-white' : 'text-gray-400 hover:bg-gray-50'}`}
+                  >
+                    <ThumbsDown className="w-4 h-4" /> Didn't like
+                  </button>
+                </div>
 
                 {/* Photo picker */}
                 <div>
@@ -110,13 +131,7 @@ export default function AddItemModal({ open, onClose, onSave, existing }) {
                       <span className="text-xs font-medium">{uploading ? 'Loading…' : 'Add photo'}</span>
                     </button>
                   )}
-                  <input
-                    ref={fileRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileChange}
-                    className="hidden"
-                  />
+                  <input ref={fileRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
                 </div>
 
                 <div>
@@ -126,6 +141,7 @@ export default function AddItemModal({ open, onClose, onSave, existing }) {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="e.g. Honeycrisp"
+                    spellCheck={true}
                     className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
                   />
                 </div>
@@ -136,17 +152,18 @@ export default function AddItemModal({ open, onClose, onSave, existing }) {
                   <textarea
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Why do you love it?"
+                    placeholder="Why do you love it? Or why didn't you?"
                     rows={2}
+                    spellCheck={true}
                     className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
                   />
                 </div>
                 <button
                   type="submit"
                   disabled={!name.trim() || uploading}
-                  className="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold rounded-xl py-3 transition disabled:opacity-40"
+                  className={`w-full text-white font-semibold rounded-xl py-3 transition disabled:opacity-40 ${disliked ? 'bg-red-500 hover:bg-red-600' : 'bg-brand-600 hover:bg-brand-700'}`}
                 >
-                  {existing ? 'Save changes' : 'Add item'}
+                  {existing ? 'Save changes' : disliked ? 'Add to didn\'t like' : 'Add to favorites'}
                 </button>
               </form>
             </Dialog.Panel>

@@ -4,6 +4,7 @@ import { Home, Star } from 'lucide-react';
 export default function BottomNav() {
   const { pathname } = useLocation();
   const isHome = pathname === '/';
+  const isFavorites = pathname === '/favorites';
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-20 bg-white/90 backdrop-blur border-t border-gray-100 pb-safe">
@@ -16,10 +17,10 @@ export default function BottomNav() {
           Home
         </Link>
         <Link
-          to="/"
-          className="flex flex-col items-center gap-1 text-xs font-semibold text-gray-400 hover:text-gray-600 transition-colors"
+          to="/favorites"
+          className={`flex flex-col items-center gap-1 text-xs font-semibold transition-colors ${isFavorites ? 'text-yellow-500' : 'text-gray-400 hover:text-gray-600'}`}
         >
-          <Star className="w-5 h-5" />
+          <Star className={`w-5 h-5 ${isFavorites ? 'fill-yellow-400 text-yellow-500' : ''}`} />
           Favorites
         </Link>
       </div>

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Plus, ChevronRight, Sparkles } from 'lucide-react';
+import { Plus, ChevronRight, Sparkles, Star } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useCategories } from '../hooks/useCategories';
 import Navbar from '../components/Navbar';
@@ -37,7 +37,7 @@ const SUGGESTIONS = [
 
 export default function Home() {
   const { user } = useAuth();
-  const { categories, loading, addCategory } = useCategories(user.uid);
+  const { categories, loading, addCategory, updateCategory } = useCategories(user.uid);
   const [showModal, setShowModal] = useState(false);
 
   const existingNames = new Set(categories.map((c) => c.name.toLowerCase()));
@@ -81,16 +81,24 @@ export default function Home() {
             <motion.ul variants={container} initial="hidden" animate="show" className="space-y-3">
               {categories.map((cat) => (
                 <motion.li key={cat.id} variants={item}>
-                  <Link
-                    to={`/category/${cat.id}`}
-                    className="flex items-center gap-4 bg-white rounded-2xl px-5 py-4 shadow-sm hover:shadow-md transition-shadow group"
-                  >
-                    <span className="text-3xl">{cat.emoji}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-gray-900">{cat.name}</p>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500 transition-colors flex-shrink-0" />
-                  </Link>
+                  <div className="flex items-center gap-2">
+                    <Link
+                      to={`/category/${cat.id}`}
+                      className="flex-1 flex items-center gap-4 bg-white rounded-2xl px-5 py-4 shadow-sm hover:shadow-md transition-shadow group"
+                    >
+                      <span className="text-3xl">{cat.emoji}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-gray-900">{cat.name}</p>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500 transition-colors flex-shrink-0" />
+                    </Link>
+                    <button
+                      onClick={() => updateCategory(cat.id, { favorite: !cat.favorite })}
+                      className="p-2 flex-shrink-0"
+                    >
+                      <Star className={`w-5 h-5 transition-colors ${cat.favorite ? 'fill-yellow-400 text-yellow-400' : 'text-gray-200 hover:text-yellow-300'}`} />
+                    </button>
+                  </div>
                 </motion.li>
               ))}
             </motion.ul>

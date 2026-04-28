@@ -100,9 +100,9 @@ export default function Category() {
     reorderItems(arrayMove(items, oldIdx, newIdx));
   };
 
-  const handleSave = async (name, notes, photoUrl) => {
-    if (editing) await updateItem(editing.id, { name, notes, photoUrl });
-    else await addItem(name, notes, photoUrl);
+  const handleSave = async (name, notes, photoUrl, disliked) => {
+    if (editing) await updateItem(editing.id, { name, notes, photoUrl, disliked });
+    else await addItem(name, notes, photoUrl, disliked);
     setEditing(null);
   };
 
@@ -199,25 +199,67 @@ export default function Category() {
         {items.length === 0 ? (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-16">
             <p className="text-5xl mb-4">{cat.emoji}</p>
-            <p className="text-gray-500 font-medium">No favorites yet — add your first!</p>
+            <p className="text-gray-500 font-medium">No items yet — add your first!</p>
           </motion.div>
         ) : (
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-            <SortableContext items={items.map((i) => i.id)} strategy={verticalListSortingStrategy}>
-              <AnimatePresence>
+          <>
+            {/* Liked items */}
+            {items.filter((i) => !i.disliked).length > 0 && (
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                <SortableContext items={items.filter((i) => !i.disliked).map((i) => i.id)} strategy={verticalListSortingStrategy}>
+                  <AnimatePresence>
+                    <div className="space-y-2">
+                      {items.filter((i) => !i.disliked).map((item) => (
+                        <SortableItem
+                          key={item.id}
+                          item={item}
+                          onEdit={(i) => { setEditing(i); setShowModal(true); }}
+                          onDelete={deleteItem}
+                        />
+                      ))}
+                    </div>
+                  </AnimatePresence>
+                </SortableContext>
+              </DndContext>
+            )}
+
+            {/* Disliked items */}
+            {items.filter((i) => i.disliked).length > 0 && (
+              <div className="mt-8">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-base">👎</span>
+                  <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wide">Didn't like</h3>
+                </div>
                 <div className="space-y-2">
-                  {items.map((item) => (
-                    <SortableItem
+                  {items.filter((i) => i.disliked).map((item) => (
+                    <motion.div
                       key={item.id}
-                      item={item}
-                      onEdit={(i) => { setEditing(i); setShowModal(true); }}
-                      onDelete={deleteItem}
-                    />
+                      initial={{ opacity: 0, x: -16 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: 16 }}
+                      className="flex items-center gap-3 bg-white rounded-2xl px-4 py-3.5 shadow-sm opacity-60"
+                    >
+                      {item.photoUrl && (
+                        <img src={item.photoUrl} alt="" className="flex-shrink-0 w-12 h-12 rounded-xl object-cover grayscale" />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-gray-400 truncate">{item.name}</p>
+                        {item.notes && <p className="text-xs text-gray-400 truncate mt-0.5">{item.notes}</p>}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button onClick={() => { setEditing(item); setShowModal(true); }} className="p-1.5 text-gray-300 hover:text-brand-500 transition rounded-lg hover:bg-brand-50">
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                        <button onClick={() => deleteItem(item.id)} className="p-1.5 text-gray-300 hover:text-red-400 transition rounded-lg hover:bg-red-50">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </motion.div>
                   ))}
                 </div>
-              </AnimatePresence>
-            </SortableContext>
-          </DndContext>
+              </div>
+            )}
+          </>
         )}
       </main>
 
