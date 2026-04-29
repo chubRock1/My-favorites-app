@@ -14,7 +14,7 @@ export default function Navbar() {
       <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2 text-brand-600">
           <span className="text-xl flex-shrink-0">🏅</span>
-          <span className="font-display font-bold text-xl tracking-tight">My Favorite Things</span>
+          <span className="font-display font-bold text-xl tracking-tight">Like it or Not</span>
         </Link>
         <div className="flex items-center gap-3">
           {showPhoto ? (
