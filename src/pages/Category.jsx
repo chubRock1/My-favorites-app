@@ -21,6 +21,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useCategories } from '../hooks/useCategories';
 import { useItems } from '../hooks/useItems';
 import AddItemModal from '../components/AddItemModal';
+import AddCategoryModal from '../components/AddCategoryModal';
 import BottomNav from '../components/BottomNav';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -79,10 +80,11 @@ export default function Category() {
   const { id } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { categories, deleteCategory } = useCategories(user.uid);
+  const { categories, deleteCategory, updateCategory } = useCategories(user.uid);
   const { items, addItem, updateItem, deleteItem, reorderItems } = useItems(user.uid, id);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(null);
+  const [showEditCat, setShowEditCat] = useState(false);
   const [shareMsg, setShareMsg] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -139,6 +141,13 @@ export default function Category() {
           </button>
           <span className="text-2xl">{cat.emoji}</span>
           <h1 className="font-bold text-gray-900 flex-1 truncate">{cat.name}</h1>
+          <button
+            onClick={() => setShowEditCat(true)}
+            className="p-1.5 text-gray-300 hover:text-brand-500 transition rounded-lg hover:bg-brand-50"
+            title="Edit category"
+          >
+            <Pencil className="w-4 h-4" />
+          </button>
           <div className="flex items-center gap-3">
             <div className="relative">
               <button onClick={handleShare} className="flex items-center gap-1.5 text-sm text-brand-600 font-semibold hover:underline">
@@ -278,6 +287,13 @@ export default function Category() {
         onClose={() => { setShowModal(false); setEditing(null); }}
         onSave={handleSave}
         existing={editing}
+      />
+
+      <AddCategoryModal
+        open={showEditCat}
+        onClose={() => setShowEditCat(false)}
+        onEdit={updateCategory}
+        existing={cat}
       />
     </>
   );

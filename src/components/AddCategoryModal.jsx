@@ -1,19 +1,31 @@
-import { Fragment, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { X } from 'lucide-react';
 
-const EMOJIS = ['🍎','🍕','🧀','🍝','🍫','☕','🍺','🎵','📚','🎬','✈️','🏔️','🌿','🐶','👟','🎮','💄','🛋️','🌸','⚽'];
+const EMOJIS = ['🍎','🍕','🧀','🍝','🍫','☕','🍺','🎵','📚','🎬','✈️','🏔️','🌿','🐶','👟','🎮','💄','🛋️','🌸','⚽','🍷','🌮','🍣','🧁','🏅','💎','🎯','❤️','🔥','⭐'];
 
-export default function AddCategoryModal({ open, onClose, onAdd }) {
+export default function AddCategoryModal({ open, onClose, onAdd, onEdit, existing }) {
   const [name, setName] = useState('');
   const [emoji, setEmoji] = useState('⭐');
+
+  useEffect(() => {
+    if (existing) {
+      setName(existing.name);
+      setEmoji(existing.emoji || '⭐');
+    } else {
+      setName('');
+      setEmoji('⭐');
+    }
+  }, [existing, open]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!name.trim()) return;
-    await onAdd(name.trim(), emoji);
-    setName('');
-    setEmoji('⭐');
+    if (existing) {
+      await onEdit(existing.id, { name: name.trim(), emoji });
+    } else {
+      await onAdd(name.trim(), emoji);
+    }
     onClose();
   };
 
@@ -35,7 +47,7 @@ export default function AddCategoryModal({ open, onClose, onAdd }) {
           >
             <Dialog.Panel className="w-full max-w-md bg-white rounded-3xl shadow-2xl p-6">
               <div className="flex items-center justify-between mb-5">
-                <Dialog.Title className="text-lg font-bold">New category</Dialog.Title>
+                <Dialog.Title className="text-lg font-bold">{existing ? 'Edit category' : 'New category'}</Dialog.Title>
                 <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
               </div>
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -58,7 +70,8 @@ export default function AddCategoryModal({ open, onClose, onAdd }) {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="e.g. Apples, Pasta Sauce…"
-                    className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    spellCheck={true}
+                    className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500 text-base"
                   />
                 </div>
                 <button
@@ -66,7 +79,7 @@ export default function AddCategoryModal({ open, onClose, onAdd }) {
                   disabled={!name.trim()}
                   className="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold rounded-xl py-3 transition disabled:opacity-40"
                 >
-                  Create category
+                  {existing ? 'Save changes' : 'Create category'}
                 </button>
               </form>
             </Dialog.Panel>
