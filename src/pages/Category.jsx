@@ -97,9 +97,10 @@ export default function Category() {
 
   const handleDragEnd = ({ active, over }) => {
     if (!over || active.id === over.id) return;
-    const oldIdx = items.findIndex((i) => i.id === active.id);
-    const newIdx = items.findIndex((i) => i.id === over.id);
-    reorderItems(arrayMove(items, oldIdx, newIdx));
+    const likedItems = items.filter((i) => !i.disliked);
+    const oldIdx = likedItems.findIndex((i) => i.id === active.id);
+    const newIdx = likedItems.findIndex((i) => i.id === over.id);
+    reorderItems(arrayMove(likedItems, oldIdx, newIdx));
   };
 
   const handleSave = async (name, notes, photoUrl, disliked) => {
