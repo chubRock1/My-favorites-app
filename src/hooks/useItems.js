@@ -23,9 +23,24 @@ export function useItems(userId, categoryId) {
       collection(db, 'users', userId, 'categories', categoryId, 'items'),
       orderBy('rank', 'asc')
     );
-    const unsub = onSnapshot(q, (snap) => {
-      setItems(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+    const unsub = onSnapshot(q, async (snap) => {
+      const loaded = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      setItems(loaded);
       setLoading(false);
+
+      // Auto-fix ranks if liked items aren't sequential from 1
+      const liked = loaded.filter((i) => !i.disliked);
+      const needsFix = liked.some((item, idx) => item.rank !== idx + 1);
+      if (needsFix && liked.length > 0) {
+        const batch = writeBatch(db);
+        liked.forEach((item, idx) => {
+          batch.update(
+            doc(db, 'users', userId, 'categories', categoryId, 'items', item.id),
+            { rank: idx + 1 }
+          );
+        });
+        await batch.commit();
+      }
     });
     return unsub;
   }, [userId, categoryId]);
