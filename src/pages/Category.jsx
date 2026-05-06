@@ -287,6 +287,8 @@ export default function Category() {
         onClose={() => { setShowModal(false); setEditing(null); }}
         onSave={handleSave}
         existing={editing}
+        categoryName={cat?.name}
+        categoryEmoji={cat?.emoji}
       />
 
       <AddCategoryModal

@@ -24,7 +24,7 @@ const compressImage = (file) =>
     img.src = url;
   });
 
-export default function AddItemModal({ open, onClose, onSave, existing }) {
+export default function AddItemModal({ open, onClose, onSave, existing, categoryName, categoryEmoji }) {
   const [name, setName] = useState('');
   const [notes, setNotes] = useState('');
   const [photo, setPhoto] = useState(null);
@@ -81,7 +81,11 @@ export default function AddItemModal({ open, onClose, onSave, existing }) {
           >
             <Dialog.Panel className="w-full max-w-md bg-white rounded-3xl shadow-2xl p-6">
               <div className="flex items-center justify-between mb-5">
-                <Dialog.Title className="text-lg font-bold">{existing ? 'Edit item' : 'Add item'}</Dialog.Title>
+                <Dialog.Title className="text-lg font-bold">
+                  {existing ? 'Edit item' : (
+                    <span>{categoryEmoji && <span className="mr-1.5">{categoryEmoji}</span>}Add to {categoryName || 'category'}</span>
+                  )}
+                </Dialog.Title>
                 <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
               </div>
               <form onSubmit={handleSubmit} className="space-y-4">
