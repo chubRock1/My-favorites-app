@@ -155,7 +155,7 @@ export default function AddItemModal({ open, onClose, onSave, existing }) {
                     placeholder="Why do you love it? Or why didn't you?"
                     rows={2}
                     spellCheck={true}
-                    className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
+                    className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
                   />
                 </div>
                 <button
@@ -163,7 +163,7 @@ export default function AddItemModal({ open, onClose, onSave, existing }) {
                   disabled={!name.trim() || uploading}
                   className={`w-full text-white font-semibold rounded-xl py-3 transition disabled:opacity-40 ${disliked ? 'bg-red-500 hover:bg-red-600' : 'bg-brand-600 hover:bg-brand-700'}`}
                 >
-                  {existing ? 'Save changes' : disliked ? 'Add to didn\'t like' : 'Add to favorites'}
+                  {existing ? 'Save changes' : 'Add item'}
                 </button>
               </form>
             </Dialog.Panel>
