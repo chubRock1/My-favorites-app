@@ -1,13 +1,15 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Download, Check, LogOut, User, Loader2 } from 'lucide-react';
+import { Download, Upload, Check, LogOut, User, Loader2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { downloadBackup } from '../utils/backup';
+import { downloadBackup, restoreFromFile, validateBackup } from '../utils/backup';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
   const [imgError, setImgError] = useState(false);
   const [backupState, setBackupState] = useState('idle'); // idle | working | done | error
+  const [restoreState, setRestoreState] = useState('idle');
+  const fileInputRef = useRef(null);
 
   const showPhoto = user?.photoURL && !imgError;
 
@@ -31,6 +33,51 @@ export default function Navbar() {
     }
   };
 
+  const handleRestoreClick = () => {
+    if (restoreState === 'working') return;
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // allow re-selecting the same file later
+    if (!file) return;
+
+    setRestoreState('working');
+    try {
+      // Peek at the file first so we can show a meaningful confirmation.
+      const parsed = JSON.parse(await file.text());
+      validateBackup(parsed);
+      const catCount = parsed.categoryCount ?? parsed.categories.length;
+      const itemCount = parsed.itemCount ?? '';
+      const when = parsed.exportedAt ? new Date(parsed.exportedAt).toLocaleDateString() : 'unknown date';
+
+      const ok = window.confirm(
+        `Restore from backup (${when})?\n\n` +
+        `${catCount} categories${itemCount !== '' ? ` and ${itemCount} items` : ''} will be added to your account.\n\n` +
+        `Categories you already have (matched by name) are skipped, and nothing existing is deleted.`
+      );
+      if (!ok) {
+        setRestoreState('idle');
+        return;
+      }
+
+      const { categoriesAdded, itemsAdded, categoriesSkipped } = await restoreFromFile(user.uid, file);
+      setRestoreState('done');
+      setTimeout(() => setRestoreState('idle'), 2500);
+      alert(
+        `Restore complete.\n\n` +
+        `Added ${categoriesAdded} categor${categoriesAdded === 1 ? 'y' : 'ies'} and ${itemsAdded} item${itemsAdded === 1 ? '' : 's'}.` +
+        (categoriesSkipped > 0 ? `\nSkipped ${categoriesSkipped} category(ies) you already had.` : '')
+      );
+    } catch (err) {
+      console.error('Restore failed', err);
+      setRestoreState('error');
+      alert(err?.message || 'Sorry, that backup could not be restored.');
+      setTimeout(() => setRestoreState('idle'), 2500);
+    }
+  };
+
   return (
     <header className="sticky top-0 z-40 bg-white/80 backdrop-blur border-b border-gray-100">
       <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
@@ -39,6 +86,27 @@ export default function Navbar() {
           <span className="font-display font-bold text-xl tracking-tight">Like it or Not</span>
         </Link>
         <div className="flex items-center gap-3">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/json,.json"
+            onChange={handleFileChange}
+            className="hidden"
+          />
+          <button
+            onClick={handleRestoreClick}
+            disabled={restoreState === 'working'}
+            className={`transition ${restoreState === 'done' ? 'text-green-500' : 'text-gray-400 hover:text-gray-600'}`}
+            title="Restore from a backup file"
+          >
+            {restoreState === 'working' ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : restoreState === 'done' ? (
+              <Check className="w-4 h-4" />
+            ) : (
+              <Upload className="w-4 h-4" />
+            )}
+          </button>
           <button
             onClick={handleBackup}
             disabled={backupState === 'working'}

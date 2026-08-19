@@ -1,4 +1,14 @@
-import { collection, getDocs, orderBy, query } from 'firebase/firestore';
+import {
+  addDoc,
+  collection,
+  doc,
+  getDocs,
+  orderBy,
+  query,
+  serverTimestamp,
+  Timestamp,
+  writeBatch,
+} from 'firebase/firestore';
 import { db } from '../firebase';
 
 // Firestore Timestamps aren't JSON-serializable — turn them into ISO strings
@@ -74,4 +84,98 @@ export async function downloadBackup(userId) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 
   return backup;
+}
+
+// Turns an ISO string (as written by the export) back into a Firestore
+// Timestamp so restored data keeps its original dates. Falls back to the
+// server clock if the value is missing or unparseable.
+function toTimestamp(iso) {
+  if (typeof iso === 'string') {
+    const d = new Date(iso);
+    if (!Number.isNaN(d.getTime())) return Timestamp.fromDate(d);
+  }
+  return serverTimestamp();
+}
+
+// Validates the shape of a parsed backup file. Throws a friendly error if it
+// doesn't look like one of ours.
+export function validateBackup(parsed) {
+  if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.categories)) {
+    throw new Error("This doesn't look like a Like it or Not backup file.");
+  }
+  return parsed;
+}
+
+// Restores a parsed backup into the user's account. Non-destructive: it never
+// deletes existing data, and skips any category whose name already exists
+// (case-insensitive) so re-importing the same file won't create duplicates.
+export async function restoreBackup(userId, parsed) {
+  validateBackup(parsed);
+
+  // Existing category names, to skip duplicates.
+  const existingSnap = await getDocs(collection(db, 'users', userId, 'categories'));
+  const existingNames = new Set(
+    existingSnap.docs.map((d) => (d.data().name || '').trim().toLowerCase())
+  );
+
+  let categoriesAdded = 0;
+  let categoriesSkipped = 0;
+  let itemsAdded = 0;
+
+  for (const cat of parsed.categories) {
+    const name = (cat?.name || '').trim();
+    if (!name) continue;
+    if (existingNames.has(name.toLowerCase())) {
+      categoriesSkipped += 1;
+      continue;
+    }
+
+    const catRef = await addDoc(collection(db, 'users', userId, 'categories'), {
+      name,
+      emoji: cat.emoji || '⭐',
+      favorite: !!cat.favorite,
+      createdAt: toTimestamp(cat.createdAt),
+    });
+    existingNames.add(name.toLowerCase());
+    categoriesAdded += 1;
+
+    const items = Array.isArray(cat.items) ? cat.items : [];
+    if (items.length === 0) continue;
+
+    // Firestore batches cap at 500 writes — chunk to stay under the limit.
+    for (let i = 0; i < items.length; i += 400) {
+      const batch = writeBatch(db);
+      for (const it of items.slice(i, i + 400)) {
+        if (!it || !it.name) continue;
+        const itemRef = doc(
+          collection(db, 'users', userId, 'categories', catRef.id, 'items')
+        );
+        batch.set(itemRef, {
+          name: it.name,
+          notes: it.notes || '',
+          photoUrl: it.photoUrl ?? null,
+          disliked: !!it.disliked,
+          rank: typeof it.rank === 'number' ? it.rank : 0,
+          createdAt: toTimestamp(it.createdAt),
+        });
+        itemsAdded += 1;
+      }
+      await batch.commit();
+    }
+  }
+
+  return { categoriesAdded, categoriesSkipped, itemsAdded };
+}
+
+// Reads a File (from an <input type="file">), parses it as JSON, and restores
+// it. Returns the restore summary.
+export async function restoreFromFile(userId, file) {
+  const text = await file.text();
+  let parsed;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    throw new Error("That file isn't valid JSON — pick a backup file you downloaded from this app.");
+  }
+  return restoreBackup(userId, parsed);
 }
